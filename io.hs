@@ -6,4 +6,4 @@ main = do putStrLn ("             ^  -  ^\n\
                     \ * Rational Arithmetic Evaluation *\n\
                     \   Example: (1%2) + (3%4) * (5%6)")
           inputString <- getLine 
-          putStrLn ("Your input is" ++ inputString ++ "!")
+          putStrLn ("Your input is \"" ++ inputString ++ "\"!")
