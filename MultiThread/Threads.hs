@@ -1,32 +1,41 @@
-import Control.Concurrent
+-- Compile with -threaded
+
 import System.IO
+import Control.Concurrent
 
 getGreeting :: IO String
 getGreeting = do
+	-- Get id and convert to string
 	tid <- myThreadId
-	let greeting = "Hello form " ++ show tid
+	let greeting = "Hello from " ++ show tid
+	-- Force evaluation of greeting and return
 	return $! greeting
 
 threadHello :: MVar () -> Chan () -> IO ()
 threadHello mutex endFlags = do
-	greeting <- getGreeting
-	
-	takeMVar mutex
-	putStrLn greeting
-	putMVar mutex ()
+    -- Compute greeting (finished before getting mutex)
+    greeting <- getGreeting
+    -- Get mutex (acquires lock for output)
+    takeMVar mutex
+    -- Say hello
+    putStrLn greeting
+    -- Release mutex (give up lock, another thread can take over)
+    putMVar mutex ()
+    -- Signal end of thread
+    writeChan endFlags ()
 
-	-- signal exiting 
-	writeChan endFlags ()
 main :: IO ()
-main = do 
+main = do
+	-- Disable buffering on stdout
 	hSetBuffering stdout NoBuffering
-	let n = 10 
+	-- Number of threads to spawn
+	let n = 10
+	-- Init mutex and FIFO for end flags
 	mutex <- newEmptyMVar
 	endFlags <- newChan
-	mapM_ (const $ forkIO $ threadHello mutex endFlags) [1..n]
+	-- Spawn threads (threads are waiting for mutex before printing)
+	mapM_ (const $ forkIO $ threadHello mutex endFlags) [1..n] 
+	-- Give mutex its value (threads start aquiring mutex here)
 	putMVar mutex ()
-	-- waiting for threads 
-	mapM_ (const $ readChan endFlags) [1..n]
-	return ()
-
-	 
+	-- Read n end flags (blocks until all threads have sent their end signal)
+	mapM_ (const $ readChan endFlags) [1..n] 
