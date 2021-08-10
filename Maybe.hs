@@ -1,20 +1,16 @@
-import Data.Maybe
+import System.IO ( stdout, hFlush )
+import Data.Maybe ( fromMaybe )
 
-data Maybe a = Nothing | Just a
+password :: String -> Maybe String
+password person = lookupUsers [("Justin", "1234"), ("Monica", "4321")]
+    where
+        lookupUsers [] = Nothing
+        lookupUsers ((name, passwd):xs) =
+            if name == person then Just passwd
+                              else lookupUsers xs
 
--- 1. Functor
-instance Functor Maybe where
-	fmap f (Just x) = Just (f x) 
-	fmap f Nothing  = Nothing
-
--- 2. Applicative Functor
-instance Applicative Maybe where
-	pure x = Just x
-	Just f <*> Just x = Just (f x)
-	_ <*> _ = Nothing
-
--- 3. Monad
-instance Monad Maybe where
-	Nothing >>= f = Nothing
-	Just val >>= f  = f val
-
+main = do
+    putStr "Input your name: "
+    hFlush stdout
+    person <- getLine
+    putStrLn $ Data.Maybe.fromMaybe "Cannot find" (password person)
